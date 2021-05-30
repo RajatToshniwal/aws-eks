@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Tempalte to launch two NAT nodes in an existing VPC. This template assumes you
+  already have a VPC configured with public subnets in 2 AZs, cooresponding
+  subnets, and route tables configured for your private subnets.
+Parameters:
+  NetworkStackName:
+    Description: >-
+      Name of an active CloudFormation stack that contains the networking
+      resources, such as the subnet and vpc , that will be used in this stack.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: SampleNetworkCrossStack
+Resources:
+  NATGatewayOne:
+    DependsOn: NAT1EIP
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - NAT1EIP
+        - AllocationId
+      SubnetId: !ImportValue 
+        'Fn::Sub': '${NetworkStackName}-publiclbsubnetA'
+  NATGatewayTwo:
+    DependsOn: NAT2EIP
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt 
+        - NAT2EIP
+        - AllocationId
+      SubnetId: !ImportValue 
+        'Fn::Sub': '${NetworkStackName}-publiclbsubnetB'
+  NAT1EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+  NAT2EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+  PrivateRouteToInternetOne:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !ImportValue 
+        'Fn::Sub': '${NetworkStackName}-EKSPrivateRoutetableA'
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGatewayOne
+  PrivateRouteToInternetTwo:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !ImportValue 
+        'Fn::Sub': '${NetworkStackName}-EKSPrivateRoutetableB'
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGatewayTwo
+Outputs:
+  NAT1:
+    Description: 'NAT #1 EIP.'
+    Value: !Ref NAT1EIP
+  NAT2:
+    Description: 'NAT #2 EIP.'
+    Value: !Ref NAT2EIP
+  NATGateway1:
+    Description: 'NAT #1 ID'
+    Value: !Ref NATGatewayOne
+    Export:
+      Name: NATGateway1
+  NATGateway2:
+    Description: 'NAT #2 ID'
+    Value: !Ref NATGatewayTwo
+    Export:
+      Name: NATGateway2
+
