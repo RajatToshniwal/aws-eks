@@ -1,0 +1,863 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Stack for VPC Network"
+Parameters:
+  vpcid:
+    Type: String
+    Default: "10.105.48.0/22"
+  publiceksmasternodescidrA:
+    Type: String
+    Default: "10.105.48.64/27"
+  publiceksmasternodescidrB:
+    Type: String
+    Default: 10.105.48.96/27
+  publiceksmasternodescidrC:
+    Type: String
+    Default: "10.105.48.128/27"
+  publiclbsubnetcidrA:
+    Type: String
+    Default: 10.105.48.0/27
+  publiclbsubnetcidrB:
+    Type: String
+    Default: 10.105.48.32/27
+  privateeksdatanodescidrA:
+    Type: String
+    Default: 10.105.49.64/26
+  privateeksdatanodescidrB:
+    Type: String
+    Default: 10.105.49.128/26
+  privatesubnetservicescidrA:
+    Type: String
+    Default: 10.105.50.0/26
+  privatesubnetservicescidrB:
+    Type: String
+    Default: 10.105.50.64/26
+  availabilityzonesA:
+    Type: String
+    Default: a
+  availabilityzonesB:
+    Type: String
+    Default: b
+  availabilityzonesC:
+    Type: String
+    Default: c
+  OfficeIP2:
+    Type: String
+    Default: 10.0.0.0/16
+  OfficeIP1:
+    Type: String
+    Default: 10.1.0.0/16
+  EnvironmentName:
+    Type: String
+    Default: vpccidr
+  clustername:
+    Type: String
+    Default: eks-test-cluster
+Resources:
+
+##VPC 
+  VPC:
+      Type: "AWS::EC2::VPC"
+      Properties:
+          CidrBlock: !Sub ${vpcid}
+          EnableDnsSupport: true
+          EnableDnsHostnames: true
+          InstanceTenancy: "default"
+          Tags:
+            - Key: Name
+              Value: !Sub VPC-${AWS::Region}
+
+# ## public subnets EKS control plane
+        
+  publiceksmasternodesA:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesA}"
+            CidrBlock: !Sub ${publiceksmasternodescidrA}
+            VpcId: !Ref VPC
+            MapPublicIpOnLaunch: true
+            Tags:
+              - Key: Name
+                Value: publicEKSmasternodeA
+              - Key: Environment
+                Value: !Ref EnvironmentName
+
+  publiceksmasternodesB:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesB}"
+            CidrBlock: !Sub ${publiceksmasternodescidrB}
+            VpcId: !Ref VPC
+            MapPublicIpOnLaunch: true
+            Tags:
+              - Key: Name
+                Value: publicEKSmasternodeB
+              - Key: Environment
+                Value: !Ref EnvironmentName
+  publiceksmasternodesC:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesC}"
+            CidrBlock: !Sub ${publiceksmasternodescidrC}
+            VpcId: !Ref VPC
+            MapPublicIpOnLaunch: true
+            Tags:
+              - Key: Name
+                Value: publicEKSmasternodeC
+              - Key: Environment
+                Value: !Ref EnvironmentName
+
+## public subnets Load Balancer
+
+  publiclbsubnetA:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesA}"
+            CidrBlock: !Sub ${publiclbsubnetcidrA}
+            VpcId: !Ref VPC
+            MapPublicIpOnLaunch: true
+            Tags:
+              - Key: Name
+                Value: publicLBsubnetA
+              - Key: Environment
+                Value: !Ref EnvironmentName
+
+  publiclbsubnetB:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesB}"
+            CidrBlock: !Sub ${publiclbsubnetcidrB}
+            VpcId: !Ref VPC
+            MapPublicIpOnLaunch: true
+            Tags:
+              - Key: Name
+                Value: publicLBsubnetB
+              - Key: Environment
+                Value: !Ref EnvironmentName
+## private subnets EKS Data Node
+
+  privateeksdatanodesA:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesA}"
+            CidrBlock: !Sub ${privateeksdatanodescidrA}
+            VpcId: !Ref VPC
+            Tags:
+              - Key: Name
+                Value: privateEKSdatanodeA
+              - Key: Environment
+                Value: !Ref EnvironmentName
+              - Key: k8s.io/cluster-autoscaler/enabled
+                Value: TRUE
+              - Key: !Sub "k8s.io/cluster-autoscaler/${clustername}"
+                Value: owned
+
+  privateeksdatanodesB:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesB}"
+            CidrBlock: !Sub ${privateeksdatanodescidrB}
+            VpcId: !Ref VPC
+            Tags:
+              - Key: Name
+                Value: privateEKSdatanodeB
+              - Key: Environment
+                Value: !Ref EnvironmentName
+              - Key: k8s.io/cluster-autoscaler/enabled
+                Value: TRUE
+              - Key: !Sub "k8s.io/cluster-autoscaler/${clustername}"
+                Value: owned
+## private subnets for RDS, Elasticache, ElasticServices services
+
+  privatesubnetservicesA:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesA}"
+            CidrBlock: !Sub ${privatesubnetservicescidrA}
+            VpcId: !Ref VPC
+            Tags:
+              - Key: Name
+                Value: privatesubnetA
+              - Key: Environment
+                Value: !Ref EnvironmentName
+
+  privatesubnetservicesB:
+        Type: "AWS::EC2::Subnet"
+        DependsOn: VPC
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}${availabilityzonesB}"
+            CidrBlock: !Sub ${privatesubnetservicescidrB}
+            VpcId: !Ref VPC
+            Tags:
+              - Key: Name
+                Value: privatesubnetB
+              - Key: Environment
+                Value: !Ref EnvironmentName
+
+#########################################################################################
+# Internet Gateway
+  EKSInternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+          Tags:
+            - Key: Name
+              Value: InternetGateway
+            - Key: Environment
+              Value: !Ref EnvironmentName
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        !Ref VPC
+      InternetGatewayId:
+        !Ref EKSInternetGateway
+#########################################################################################
+   
+
+  
+## EKS Public Subnet Route Table
+  
+  EKSPublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          !Ref VPC
+        Tags: 
+          - Key: Name
+            Value: EKSPublicRouteTable
+          - Key: Environment
+            Value: !Ref EnvironmentName
+  
+  EKSPublicRoutes:
+      Type: AWS::EC2::Route  
+      Properties:
+        RouteTableId:
+          !Ref EKSPublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref EKSInternetGateway
+
+  EKSPublicSubnetRouteTableAssociationA:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: EKSPublicRouteTable
+      Properties:
+        SubnetId: 
+          Ref: "publiceksmasternodesA"
+        RouteTableId:
+          Ref: "EKSPublicRouteTable"
+    
+  EKSPublicSubnetRouteTableAssociationB:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: EKSPublicRouteTable
+      Properties:
+        SubnetId: 
+          Ref: "publiceksmasternodesB"
+        RouteTableId:
+          Ref: "EKSPublicRouteTable"
+    
+  EKSPublicSubnetRouteTableAssociationC:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: EKSPublicRouteTable
+      Properties:
+        SubnetId: 
+          Ref: "publiceksmasternodesC"
+        RouteTableId:
+          Ref: "EKSPublicRouteTable"
+
+
+
+
+## Load Balanver Public Subnet Route Table
+
+  LBPublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          !Ref VPC
+        Tags: 
+          - Key: "Name"
+            Value: LBPublicRouteTableA
+          - Key: Environment
+            Value: !Ref EnvironmentName
+  
+  LBPublicPublicRouteA:
+      Type: AWS::EC2::Route
+      DependsOn: LBPublicRouteTable
+      Properties:
+        RouteTableId:
+          !Ref LBPublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref EKSInternetGateway
+          
+
+  LBPublicSubnetRouteTableAssociationA:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: LBPublicRouteTable
+      Properties:
+        SubnetId: 
+          Ref: "publiclbsubnetA"
+        RouteTableId:
+          Ref: "LBPublicRouteTable"
+
+  LBPublicSubnetRouteTableAssociationB:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: LBPublicRouteTable
+      Properties:
+        SubnetId: 
+          Ref: "publiclbsubnetB"
+        RouteTableId:
+          Ref: "LBPublicRouteTable"
+
+
+## EKS Data Private Subnet A Route Table
+
+
+  EKSPrivateRoutetableA:
+      Type: "AWS::EC2::RouteTable"
+      Properties:
+        VpcId:
+          !Ref VPC
+        Tags: 
+          - Key: "Name"
+            Value: EKSPrivateRoutetable
+          - Key: Environment
+            Value: !Ref EnvironmentName
+  EKSPrivateRoutetableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        !Ref VPC
+      Tags: 
+        - Key: "Name"
+          Value: EKSPrivateRoutetable
+        - Key: Environment
+          Value: !Ref EnvironmentName  
+
+  EKSPrivateSubnetRouteTableAssociationA:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: EKSPrivateRoutetableA
+      Properties:
+        SubnetId:
+          Ref: "privateeksdatanodesA"
+        RouteTableId:
+          Ref: "EKSPrivateRoutetableA"
+
+  EKSPrivateSubnetRouteTableAssociationB:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: EKSPrivateRoutetableB
+      Properties:
+        SubnetId:
+          Ref: "privateeksdatanodesB"
+        RouteTableId:
+          Ref: "EKSPrivateRoutetableB"
+
+
+
+
+## Supporting Service Private Subnet A Route Table
+
+
+  ServicesPrivateRoutetableA:
+      Type: "AWS::EC2::RouteTable"
+      Properties:
+        VpcId:
+          !Ref VPC
+        Tags: 
+          - Key: "Name"
+            Value: ServicesPrivateRoutetable
+          - Key: Environment
+            Value: !Ref EnvironmentName
+  ServicesPrivateRoutetableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        !Ref VPC
+      Tags: 
+        - Key: "Name"
+          Value: ServicesPrivateRoutetable
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  ServicesPrivateSubnetRouteTableAssociationA:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: ServicesPrivateRoutetableA
+      Properties:
+        SubnetId:
+          Ref: "privatesubnetservicesA"
+        RouteTableId:
+          Ref: "ServicesPrivateRoutetableA"
+
+  ServicesPrivateSubnetRouteTableAssociationB:
+      Type: "AWS::EC2::SubnetRouteTableAssociation"
+      DependsOn: ServicesPrivateRoutetableB
+      Properties:
+        SubnetId:
+          Ref: "privatesubnetservicesB"
+        RouteTableId:
+          Ref: "ServicesPrivateRoutetableB"
+
+
+
+
+######################################################
+
+## NACL Configuration
+
+
+  EKSPublicNetworkAcl:
+        Type: AWS::EC2::NetworkAcl
+        Properties:
+            VpcId: !Ref VPC
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Public Acl
+                - Key: Env
+                  Value: !Ref EnvironmentName
+ 
+  EKSPrivateNetworkAcl:
+        Type: AWS::EC2::NetworkAcl
+        Properties:
+            VpcId: !Ref VPC
+            Tags:
+                - Key: Name
+                  Value: !Sub ${EnvironmentName} Private Acl
+                - Key: Env
+                  Value: !Ref EnvironmentName
+  LBPublicAcl:
+      Type: AWS::EC2::NetworkAcl
+      Properties:
+          VpcId: !Ref VPC
+          Tags:
+              - Key: Name
+                Value: !Sub ${EnvironmentName} NAT Public Acl
+              - Key: Env
+                Value: !Ref EnvironmentName
+#######################################################
+  InboundPublicNATNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref LBPublicAcl
+            RuleNumber: '100'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '1024'
+                To: '65535' 
+
+  InboundPublicHTTPLBNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref LBPublicAcl
+            RuleNumber: '120'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '80'
+                To: '80'
+  #Allow Inbound TCP port 443 
+  InboundPublicHTTPSLBNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref LBPublicAcl
+            RuleNumber: '140'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '443'
+                To: '443'
+####################################################                
+  #Allow Inbound TCP port 80 
+  InboundHTTPPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '100'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '80'
+                To: '80'
+  #Allow Inbound TCP port 443 
+  InboundHTTPSPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '120'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '443'
+                To: '443'
+  #Allow Inbound TCP port 1024 to 65535 (dynamic Ports)
+  InboundDynamicPortsPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '140'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: !Ref vpcid
+            PortRange:
+                From: '1024'
+                To: '65535'           
+  #Allow Inbound TCP port 22 
+  InboundSSHPortsPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '160'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: !Ref OfficeIP1
+            PortRange:
+                From: '22'
+                To: '22'
+                
+
+  #Allow Inbound TCP port 3306
+  InboundMyQSLPrivateNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+            RuleNumber: '100'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: !Ref vpcid
+            PortRange:
+                From: '3306'
+                To: '3306'
+  #Allow Inbound TCP Dynamic Port
+  InboundDynamicPortsPrivateNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+            RuleNumber: '145'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'false'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '1024'
+                To: '65535' 
+
+
+  InboundEksPrivateNaclEntry:
+      Type: AWS::EC2::NetworkAclEntry
+      Properties:
+          NetworkAclId: !Ref EKSPrivateNetworkAcl
+          RuleNumber: '160'
+          Protocol: -1
+          RuleAction: allow
+          Egress: 'false'
+          CidrBlock: !Ref vpcid
+          PortRange:
+              From: 0
+              To: 65535
+
+############################################################
+  OUTboundPublicNATNaclEntry:
+      Type: AWS::EC2::NetworkAclEntry
+      Properties:
+          NetworkAclId: !Ref LBPublicAcl
+          RuleNumber: '100'
+          Protocol: "6"
+          RuleAction: allow
+          Egress: 'true'
+          CidrBlock: '0.0.0.0/0'
+          PortRange:
+              From: '0'
+              To: '65535' 
+############################################################
+  OutboundHTTPPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '100'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '80'
+                To: '80'
+ 
+  OutboundHTTPSPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '120'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '443'
+                To: '443'
+
+
+
+                
+  OutboundDynamicPortsPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '140'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '1024'
+                To: '65535'           
+ 
+  OutboundSSHPortsPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '160'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: !Ref OfficeIP1
+            PortRange:
+                From: '22'
+                To: '22'
+                
+
+ 
+  OutboundNTPPortsPublicNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+            RuleNumber: '200'
+            Protocol: "17"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '123'
+                To: '123'
+
+ ######################################################
+  OutboundRedisPrivateNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+            RuleNumber: '190'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: 0.0.0.0/0
+            PortRange:
+                From: '443'
+                To: '443'
+ 
+  
+ 
+  OutboundRandomPrivateNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+            RuleNumber: '160'
+            Protocol: "6"
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: '0.0.0.0/0'
+            PortRange:
+                From: '1024'
+                To: '65535'
+
+  OutboundEKSPrivateNaclEntry:
+        Type: AWS::EC2::NetworkAclEntry
+        Properties:
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+            RuleNumber: '161'
+            Protocol: -1
+            RuleAction: allow
+            Egress: 'true'
+            CidrBlock: !Ref vpcid
+            PortRange:
+                From: 0
+                To: 65535
+
+
+###############################
+
+##NACL Association
+
+  PublicEKSSubnetANetworkAclAssociation:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref publiceksmasternodesA
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+
+  PublicEKSSubnetBNetworkAclAssociation:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref publiceksmasternodesB
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+
+  PublicEKSSubnetCNetworkAclAssociation:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref publiceksmasternodesC
+            NetworkAclId: !Ref EKSPublicNetworkAcl
+
+  PublicLBSubnetANetworkAclAssociation:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref publiclbsubnetA
+            NetworkAclId: !Ref LBPublicAcl
+
+  PublicLBSubnetBNetworkAclAssociation:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref publiclbsubnetB
+            NetworkAclId: !Ref LBPublicAcl
+
+  PrivateSubnetNetworkAclAssociation1:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref privateeksdatanodesA
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+ 
+  PrivateSubnetNetworkAclAssociation2:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref privateeksdatanodesB
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+
+  PrivateSubnetNetworkAclAssociation3:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref privatesubnetservicesA
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+ 
+  PrivateSubnetNetworkAclAssociation4:
+        Type: AWS::EC2::SubnetNetworkAclAssociation
+        Properties:
+            SubnetId: !Ref privatesubnetservicesB
+            NetworkAclId: !Ref EKSPrivateNetworkAcl
+
+
+        
+     
+
+Outputs:
+  VPC:
+    Description: VPC ID
+    Value:
+      Ref: VPC
+    Export:
+      Name: "VPC"
+
+  EKSPublicSubnetA:
+    Description: The subnet ID to used for public EKS Master Node 
+    Value:
+      Ref: publiceksmasternodesA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPublicSubnetA ] ]
+      
+  EKSPublicSubnetB:
+    Description: The subnet ID to used for public  EKS Master Node
+    Value:
+      Ref: publiceksmasternodesB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPublicSubnetB ] ]
+
+  EKSPublicSubnetC:
+    Description: The subnet ID to used for public EKS Master Node
+    Value:
+      Ref: publiceksmasternodesC
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPublicSubnetC ] ]
+
+  publiclbsubnetA:
+    Description: The subnet ID to used for Load Balancer
+    Value:
+      Ref: publiclbsubnetA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", publiclbsubnetA ] ]
+
+  publiclbsubnetB:
+    Description: The subnet ID to used for Load Balancer
+    Value:
+      Ref: publiclbsubnetB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", publiclbsubnetB ] ]
+
+  EKSPrivateSubnetA:
+    Description: The subnet ID to use for EKS cluster private subnet
+    Value:
+      Ref: privateeksdatanodesA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPrivateSubnetA] ]
+
+  EKSPrivateSubnetB:
+    Description: The subnet ID to used for EKS cluster private subnet 
+    Value:
+      Ref: privateeksdatanodesB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPrivateSubnetB] ]
+
+  ServicesPrivateSubnetA:
+    Description: The subnet ID to use for private subnet
+    Value:
+      Ref: privatesubnetservicesA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", ServicesPrivateSubnetA] ]
+
+  ServicesPrivateSubnetB:
+    Description: The subnet ID to use for private subnet 
+    Value:
+      Ref: privatesubnetservicesB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", ServicesPrivateSubnetB] ]
+  EKSPrivateRoutetableA:
+    Description: Private subnet Route table for Data Nodes  
+    Value:
+      Ref: EKSPrivateRoutetableA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", DataPrivateRoutetableA] ]
+  EKSPrivateRoutetableB:
+    Description: Private subnet Route table for Data Nodes  
+    Value:
+      Ref: EKSPrivateRoutetableB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", DataPrivateRoutetableB] ]
+  ServicesPrivateRoutetableA:
+    Description: Private subnet for all the other services  
+    Value:
+      Ref: ServicesPrivateRoutetableA
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", ServicesPrivateRoutetableA] ]
+  ServicesPrivateRoutetableB:
+    Description: Private subnet for all the other services  
+    Value:
+      Ref: ServicesPrivateRoutetableB
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", ServicesPrivateRoutetableB] ]
+##################
+
+
+  
