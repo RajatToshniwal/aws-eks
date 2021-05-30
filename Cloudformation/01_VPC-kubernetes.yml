@@ -838,13 +838,13 @@ Outputs:
     Value:
       Ref: EKSPrivateRoutetableA
     Export:
-      Name: !Join [ "-", [ !Ref "AWS::StackName", DataPrivateRoutetableA] ]
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPrivateRoutetableA] ]
   EKSPrivateRoutetableB:
     Description: Private subnet Route table for Data Nodes  
     Value:
       Ref: EKSPrivateRoutetableB
     Export:
-      Name: !Join [ "-", [ !Ref "AWS::StackName", DataPrivateRoutetableB] ]
+      Name: !Join [ "-", [ !Ref "AWS::StackName", EKSPrivateRoutetableB] ]
   ServicesPrivateRoutetableA:
     Description: Private subnet for all the other services  
     Value:
