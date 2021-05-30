@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Creates a stack containing an IAM role used to grant
+  eks codebuild access to AWS infrastructures.
+
+Parameters:
+  AwsAccountId:
+    Type: Number
+    Description: Account number of the AWS account to which to grant read access for
+      monitoring purposes.
+
+Resources:
+  PIMekscodedeployrole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ "-", [ !Ref "AWS::StackName", Codedeploy ] ]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${AwsAccountId}:root
+          Action:
+          - sts:AssumeRole
+  PIMekscodedeployPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: PIMekscodedeployPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action:
+          - eks:Describe*
+          Effect: Allow
+          Resource: "*"
+      Roles: [!Ref PIMekscodedeployrole]
+
+Outputs:
+  RoleId:
+    Description: The logical ID of the IAM role
+    Value: !Ref PIMekscodedeployrole
+  RoleArn:
+    Description: The ARN of the IAM role
+    Value: !GetAtt [PIMekscodedeployrole, Arn]
+  PolicyId:
+    Description: The logical ID of the IAM policy
+    Value: !Ref PIMekscodedeployPolicy
