@@ -1,0 +1,51 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Creates a stack containing an IAM role used to grant
+  eks autoscaler access to AWS infrastructures.
+
+
+Resources:
+  eksautoscalerrole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ "-", [ !Ref "AWS::StackName", autoscaler ] ]
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+  eksautoscalerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: "Autoscaler Policy"
+      Path: /
+      ManagedPolicyName: !Join [ "-", [ !Ref "AWS::StackName", !Ref "AWS::Region", autoscalerpolicy ] ]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action:
+          - els:Describe*
+          - autoscaling:DescribeAutoScalingGroups
+          - autoscaling:DescribeAutoScalingInstances
+          - autoscaling:DescribeLaunchConfigurations
+          - autoscaling:DescribeTags
+          - autoscaling:SetDesiredCapacity
+          - autoscaling:TerminateInstanceInAutoScalingGroup
+          - ec2:DescribeLaunchTemplateVersions
+          Effect: Allow
+          Resource: "*"
+      Roles: [!Ref eksautoscalerrole]
+
+Outputs:
+  RoleId:
+    Description: The logical ID of the IAM role
+    Value: !Ref eksautoscalerrole
+  RoleArn:
+    Description: The ARN of the IAM role
+    Value: !GetAtt [eksautoscalerrole, Arn]
+  PolicyId:
+    Description: The logical ID of the IAM policy
+    Value: !Ref eksautoscalerPolicy
