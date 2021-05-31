@@ -11,7 +11,7 @@ Parameters:
       monitoring purposes.
 
 Resources:
-  PIMekscodedeployrole:
+  ekscodedeployrole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Join [ "-", [ !Ref "AWS::StackName", Codedeploy ] ]
@@ -22,10 +22,10 @@ Resources:
             AWS: !Sub arn:aws:iam::${AwsAccountId}:root
           Action:
           - sts:AssumeRole
-  PIMekscodedeployPolicy:
+  ekscodedeployPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: PIMekscodedeployPolicy
+      PolicyName: ekscodedeployPolicy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -33,15 +33,15 @@ Resources:
           - eks:Describe*
           Effect: Allow
           Resource: "*"
-      Roles: [!Ref PIMekscodedeployrole]
+      Roles: [!Ref ekscodedeployrole]
 
 Outputs:
   RoleId:
     Description: The logical ID of the IAM role
-    Value: !Ref PIMekscodedeployrole
+    Value: !Ref ekscodedeployrole
   RoleArn:
     Description: The ARN of the IAM role
-    Value: !GetAtt [PIMekscodedeployrole, Arn]
+    Value: !GetAtt [ekscodedeployrole, Arn]
   PolicyId:
     Description: The logical ID of the IAM policy
-    Value: !Ref PIMekscodedeployPolicy
+    Value: !Ref ekscodedeployPolicy
