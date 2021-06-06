@@ -7,7 +7,7 @@ vpc_id="vpc-00000000"
 region=us-east-X
 cd /tmp
 #####Creating Policy for ALB controller
-curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
+curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.8/docs/examples/iam-policy.json
 
 aws iam create-policy \
     --policy-name $policy_name \
