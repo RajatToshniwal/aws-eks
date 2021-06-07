@@ -1,18 +1,20 @@
 #!/usr/bin/env sh
-name=$1
-version=$2
-region=$3
-vpcprivate1=$4
-vpcprivate2=$5
-vpcpublic1=$6
-vpcpublic2=$7
-vpcpublic3=$8
-nodetype=$9
-min="${10}"
-max="${11}"
-key="${12}"
-nodegroupname="${13}"
-nodevolumesize="${14}"
+#This script will create the EKS cluster. Optionally you can add or delete parameters as per your requirement.
+#This script requires the following parameters
+name=$1   #Name of the EKS cluster
+version=$2   #Version of the EKS cluster
+region=$3    #Region in which EKS cluster will be created
+vpcprivate1=$4    #Private Subnet of the cluster, data nodes will be created here.
+vpcprivate2=$5    #Private Subnet of the cluster, data nodes will be created here. 
+vpcpublic1=$6     #Public Subnet of the cluster, master plane will be deployed here.
+vpcpublic2=$7     #Public Subnet of the cluster, master plane will be deployed here.
+vpcpublic3=$8     #Public Subnet of the cluster, master plane will be deployed here.
+nodetype=$9       #Instance Type of the data nodes
+min="${10}"       #Minimum number of data nodes 
+max="${11}"       #Maximu number of data nodes
+key="${12}"       #SSH key for the data nodes 
+nodegroupname="${13}"  #Nodegroup name
+nodevolumesize="${14}"   #Disk size of the data nodes
 echo "Name: $name"
 echo "Version: $version"
 echo "Region: $region"
