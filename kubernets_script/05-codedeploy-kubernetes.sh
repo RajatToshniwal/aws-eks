@@ -4,8 +4,8 @@
 kubectl get configmap aws-auth -o yaml -n kube-system
 
 # Export your Account ID
-export ACCOUNT_ID="YOUR_ACCOUNT_ID"
-ROLEARN="ROLE_ARN of Codebuild role""
+export ACCOUNT_ID="XXXXX"  #AWS Account ID
+ROLEARN="ROLE_ARN of Codebuild role"  #Role Arn. Role is created out of the cloudformation script executed before it. You can check the Cloudformation Output (Console) for the Arn.
 
 # Set ROLE value
 ROLE="    - rolearn: $ROLEARN\n      username: build\n      groups:\n        - system:masters"
